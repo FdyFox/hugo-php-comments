@@ -1,0 +1,7 @@
+# The generated config and shared code are not meant to be requested directly
+<FilesMatch "^(config|lib)\.php$">
+  Require all denied
+</FilesMatch>
+
+# The data directory also gets its own .htaccess on first use
+RedirectMatch 404 "/(data|lang)(/|$)"

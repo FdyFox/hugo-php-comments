@@ -1,0 +1,12 @@
+name = "hugo-php-comments"
+license = "MIT"
+licenselink = "https://github.com/FdyFox/hugo-php-comments/blob/main/LICENSE"
+description = "Self-hosted comments for Hugo on plain PHP webspace, with SQLite and no third parties"
+homepage = "https://github.com/FdyFox/hugo-php-comments"
+tags = ["comments", "php", "sqlite", "privacy"]
+features = ["comments", "moderation"]
+min_version = "0.120.0"
+
+[author]
+  name = "FdyFox"
+  homepage = "https://fdyfox.com"

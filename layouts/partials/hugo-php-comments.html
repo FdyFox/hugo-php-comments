@@ -1,0 +1,151 @@
+{{- /*
+  Comment list and form. Comments are loaded from the PHP endpoint with fetch;
+  submitting also works without JavaScript.
+
+  Site params (all optional):
+    commentsEndpoint    URL of api.php, default "comments/api.php" relative to the site
+    commentsLanguage    "en" or "de" (or your own data file), default is the page language
+    commentsPrivacyUrl  link shown below the form
+    commentsNoCss       true to style everything yourself
+*/ -}}
+{{- $endpoint := site.Params.commentsEndpoint | default ("comments/api.php" | relURL) }}
+{{- $lang := site.Params.commentsLanguage | default site.Language.Lang }}
+{{- $data := site.Data.hugo_php_comments }}
+{{- $t := or (index $data $lang) (index $data (index (split (lower $lang) "-") 0)) $data.en }}
+{{- $strings := dict "one" $t.count_one "many" $t.count_many "author" $t.author_badge "loadError" $t.load_error "networkError" $t.network_error "sending" $t.sending "submit" $t.submit }}
+
+{{- if not site.Params.commentsNoCss }}
+  {{- with resources.Get "css/hugo-php-comments.css" | minify | fingerprint }}
+<link rel="stylesheet" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
+  {{- end }}
+{{- end }}
+
+<section id="comments" class="hpc" data-endpoint="{{ $endpoint }}" data-section="{{ .Section }}" data-page="{{ .File.ContentBaseName }}" data-lang="{{ $lang }}">
+  <h2 class="hpc-title">{{ $t.title }}</h2>
+
+  <ol class="hpc-list" hidden></ol>
+  <p class="hpc-empty" hidden>{{ $t.empty }}</p>
+  <noscript><p class="hpc-empty">{{ $t.no_js }}</p></noscript>
+
+  <div id="comment-thanks" class="hpc-notice hpc-notice-ok hpc-target"><strong>{{ $t.thanks_title }}</strong> {{ $t.thanks }}</div>
+  <div id="comment-error" class="hpc-notice hpc-notice-error hpc-target"><strong>{{ $t.error_title }}</strong> {{ $t.error }}</div>
+
+  <form class="hpc-form" action="{{ $endpoint }}" method="POST">
+    <div class="hpc-row">
+      <div class="hpc-field">
+        <label for="hpc-name">{{ $t.name }} <span class="hpc-optional">({{ $t.optional }})</span></label>
+        <input type="text" id="hpc-name" name="name" maxlength="80" autocomplete="name">
+      </div>
+      <div class="hpc-field">
+        <label for="hpc-email">{{ $t.email }} <span class="hpc-optional">({{ $t.email_private }})</span></label>
+        <input type="email" id="hpc-email" name="email" maxlength="200" autocomplete="email">
+      </div>
+    </div>
+    <div class="hpc-field">
+      <label for="hpc-website">{{ $t.website }} <span class="hpc-optional">({{ $t.optional }})</span></label>
+      <input type="text" id="hpc-website" name="website" maxlength="200" autocomplete="url" inputmode="url" placeholder="https://">
+    </div>
+    <div class="hpc-field">
+      <label for="hpc-comment">{{ $t.comment }}</label>
+      <textarea id="hpc-comment" name="comment" rows="5" maxlength="5000" required></textarea>
+    </div>
+    <div style="display:none" aria-hidden="true">
+      <input type="text" name="fax" tabindex="-1" autocomplete="off">
+    </div>
+    <input type="hidden" name="section" value="{{ .Section }}">
+    <input type="hidden" name="page" value="{{ .File.ContentBaseName }}">
+    <input type="hidden" name="path" value="{{ .RelPermalink }}">
+    <div class="hpc-footer">
+      <button type="submit">{{ $t.submit }}</button>
+      <span class="hpc-hint">{{ $t.hint }}{{ with site.Params.commentsPrivacyUrl }} <a href="{{ . }}">{{ $t.privacy }}</a>{{ end }}</span>
+    </div>
+    <div class="hpc-status" role="status" aria-live="polite"></div>
+  </form>
+</section>
+
+<script>
+(() => {
+  const root = document.getElementById('comments');
+  if (!root) return;
+  const t = {{ $strings }};
+  const { endpoint, section, page, lang } = root.dataset;
+  const list   = root.querySelector('.hpc-list');
+  const empty  = root.querySelector('p.hpc-empty');
+  const title  = root.querySelector('.hpc-title');
+  const form   = root.querySelector('.hpc-form');
+  const status = form.querySelector('.hpc-status');
+  const button = form.querySelector('button[type=submit]');
+
+  const el = (tag, props = {}, ...children) => {
+    const e = Object.assign(document.createElement(tag), props);
+    e.append(...children);
+    return e;
+  };
+  const fmt = new Intl.DateTimeFormat(lang, { dateStyle: 'medium', timeStyle: 'short' });
+
+  // Replies always come from the author, so they get a badge
+  const renderComment = (c, isReply = false) => {
+    const author = c.website
+      ? el('a', { className: 'hpc-author', href: c.website, target: '_blank', rel: 'nofollow ugc noopener', textContent: c.name })
+      : el('span', { className: 'hpc-author', textContent: c.name });
+    const meta = el('div', { className: 'hpc-meta' }, author);
+    if (isReply) meta.append(el('span', { className: 'hpc-badge', textContent: t.author }));
+    meta.append(el('time', { dateTime: c.date, textContent: fmt.format(new Date(c.date)) }));
+
+    const body = el('div', { className: 'hpc-body' });
+    for (const para of c.comment.split(/\n{2,}/)) {
+      const p = el('p');
+      para.split('\n').forEach((line, i) => { if (i) p.append(el('br')); p.append(line); });
+      body.append(p);
+    }
+
+    const item = el('li', { className: 'hpc-comment' }, meta, body);
+    if (c.replies?.length) {
+      item.append(el('ol', { className: 'hpc-replies' }, ...c.replies.map(r => renderComment(r, true))));
+    }
+    return item;
+  };
+
+  fetch(`${endpoint}?section=${encodeURIComponent(section)}&page=${encodeURIComponent(page)}`)
+    .then(res => res.json())
+    .then(({ comments }) => {
+      if (!comments.length) { empty.hidden = false; return; }
+      const count = comments.reduce((n, c) => n + 1 + c.replies.length, 0);
+      title.textContent = `${count} ${count === 1 ? t.one : t.many}`;
+      list.append(...comments.map(c => renderComment(c)));
+      list.hidden = false;
+    })
+    .catch(() => {
+      empty.textContent = t.loadError;
+      empty.hidden = false;
+    });
+
+  const show = (ok, text) => {
+    status.className = 'hpc-status hpc-notice ' + (ok ? 'hpc-notice-ok' : 'hpc-notice-error');
+    status.textContent = text;
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    button.disabled = true;
+    button.textContent = t.sending;
+    try {
+      const res  = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json' },
+      });
+      const data = await res.json();
+      show(data.success, data.message);
+      if (data.success) {
+        form.querySelectorAll('.hpc-row, .hpc-field, .hpc-footer').forEach(n => n.remove());
+        return;
+      }
+    } catch {
+      show(false, t.networkError);
+    }
+    button.disabled = false;
+    button.textContent = t.submit;
+  });
+})();
+</script>

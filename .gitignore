@@ -1,0 +1,6 @@
+static/comments/config.php
+static/comments/data/
+tests/.work/
+tests/site/public/
+tests/site/resources/
+.hugo_build.lock

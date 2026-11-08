@@ -1,0 +1,9 @@
+baseURL = "https://example.org/"
+title = "Test"
+languageCode = "en"
+theme = "hugo-php-comments"
+themesDir = "../../.."
+disableKinds = ["taxonomy", "term", "RSS", "sitemap"]
+
+[params]
+  commentsPrivacyUrl = "/privacy/"
