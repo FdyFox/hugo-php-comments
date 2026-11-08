@@ -1,5 +1,6 @@
-/* Override these variables on .hpc to match your theme. */
-.hpc {
+/* Override these variables on .hpc to match your theme. :where() keeps the
+   defaults at zero specificity, so overrides win regardless of load order. */
+:where(.hpc) {
   --hpc-surface: #f4f4f5;
   --hpc-background: #fff;
   --hpc-text: inherit;
@@ -11,14 +12,15 @@
   --hpc-error: #b91c1c;
   --hpc-radius: 8px;
   --hpc-gap: 1rem;
-
+}
+.hpc {
   margin-top: calc(var(--hpc-gap) * 2);
   padding-top: var(--hpc-gap);
   border-top: 1px solid var(--hpc-border);
   color: var(--hpc-text);
 }
 @media (prefers-color-scheme: dark) {
-  .hpc {
+  :where(.hpc) {
     --hpc-surface: #27272a;
     --hpc-background: #18181b;
     --hpc-muted: #a1a1aa;

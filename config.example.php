@@ -14,6 +14,7 @@ return [
     // 'timezone'           => 'Europe/Berlin',
     // 'date_format'        => 'd.m.Y, H:i',
     // 'data_dir'           => '/path/outside/webroot', // recommended; required on nginx
+    // 'db_file'            => 'comments.sqlite',
     // 'data_dir_protected' => true,                    // only if your server blocks data_dir itself
     // 'admin_css'          => ':root { --accent: #c2410c; }',
 ];

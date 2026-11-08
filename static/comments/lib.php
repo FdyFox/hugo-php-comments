@@ -36,6 +36,7 @@ function config(): array
             'timezone'            => 'UTC',
             'date_format'         => 'Y-m-d H:i',
             'data_dir'            => __DIR__ . '/data',
+            'db_file'             => 'comments.sqlite',
             'data_dir_protected'  => false,  // set to true once your server blocks the data directory itself
             'admin_css'           => '',
             'cors'                => false,  // development only: Hugo's dev server runs on another port
@@ -93,7 +94,7 @@ function db(): PDO
     if (!is_file("$dir/.htaccess")) {
         file_put_contents("$dir/.htaccess", "Require all denied\n");
     }
-    $db = new PDO('sqlite:' . $dir . '/comments.sqlite', null, null, [
+    $db = new PDO('sqlite:' . $dir . '/' . basename((string) config()['db_file']), null, null, [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
