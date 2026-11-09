@@ -6,6 +6,9 @@ PHP and one SQLite file, on the webspace you already pay for. No account for you
 
 About 700 lines of PHP you can read in one sitting.
 
+> [!NOTE]
+> This component was developed with the help of AI, using [Claude Code](https://claude.com/claude-code).
+
 ## Features
 
 - Name, email and website are optional; only the comment is required
