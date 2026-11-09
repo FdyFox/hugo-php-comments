@@ -10,7 +10,13 @@
 */ -}}
 {{- $endpoint := site.Params.commentsEndpoint | default ("comments/api.php" | relURL) }}
 {{- $lang := site.Params.commentsLanguage | default site.Language.Lang }}
-{{- $data := site.Data.hugo_php_comments }}
+{{- /* hugo.Data replaces the deprecated site.Data, but only exists from Hugo 0.156 on. */ -}}
+{{- $data := dict }}
+{{- if ge hugo.Version "0.156.0" }}
+  {{- $data = hugo.Data.hugo_php_comments }}
+{{- else }}
+  {{- $data = site.Data.hugo_php_comments }}
+{{- end }}
 {{- $t := or (index $data $lang) (index $data (index (split (lower $lang) "-") 0)) $data.en }}
 {{- $strings := dict "one" $t.count_one "many" $t.count_many "author" $t.author_badge "loadError" $t.load_error "networkError" $t.network_error "sending" $t.sending "submit" $t.submit }}
 
